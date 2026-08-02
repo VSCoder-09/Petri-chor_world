@@ -1,94 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Petri-Chor : Aurora Space Station</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Drive Infinity — V&V City</title>
+<link rel="stylesheet" href="style.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 </head>
 <body>
 
-    <div id="hud">🛰️ Aurora Space Station</div>
-    <div id="room-banner"></div>
+  <div id="game-container"></div>
 
-    <div id="minimap">
-        <canvas id="minimapCanvas" width="120" height="120"></canvas>
+  <!-- ============ TITLE / START SCREEN ============ -->
+  <div id="start-screen">
+    <div class="start-inner">
+      <h1 class="start-title">V&amp;V CITY <span>ADVENTURE</span></h1>
+      <button id="btn-play" class="start-btn primary">PLAY</button>
+      <button id="btn-title-character" class="start-btn">🧑 CHARACTER</button>
+      <button id="btn-title-settings" class="start-btn">SETTINGS</button>
+      <div class="start-footnote">An open-world sandbox · built with Three.js</div>
+    </div>
+  </div>
+
+  <!-- ============ LOADING ============ -->
+  <div id="loading-screen">
+    <div class="loading-inner">
+      <h1>DRIVE <span>INFINITY</span></h1>
+      <div class="loading-bar"><div id="loading-fill"></div></div>
+      <div id="loading-text">Loading…</div>
+    </div>
+  </div>
+
+  <!-- ============ IN-GAME HUD ============ -->
+  <div id="hud">
+    <div id="top-left-hud"><span id="fps">0 fps</span></div>
+
+    <div id="top-right-bar">
+      <button id="btn-pause" class="icon-btn" title="Pause">⏸️</button>
+      <button id="btn-minimap-toggle" class="icon-btn" title="Minimap">🗺️</button>
+      <button id="btn-sound" class="icon-btn" title="Sound"><span id="btn-sound-icon">🔊</span></button>
+      <button id="btn-outfit" class="icon-btn" title="Outfit">🧥</button>
+      <button id="btn-garage" class="icon-btn" title="Garage">📦</button>
     </div>
 
-    <div id="game">
-        <div id="world">
-            <div id="map"></div>
-            <div id="player">
-                <img src="walk.png" alt="Player">
-            </div>
-        </div>
+    <div id="minimap-wrap">
+      <canvas id="minimap" width="220" height="220"></canvas>
+      <div id="compass">N</div>
     </div>
 
-    <div id="joystick-container">
-        <div id="joystick-base">
-            <div id="joystick-thumb"></div>
-        </div>
+    <div id="prompt" class="hidden"></div>
+    <div id="toast"></div>
+
+    <div id="speedo-wrap" class="hidden">
+      <canvas id="speedo" width="180" height="180"></canvas>
+      <div id="speed-value">0<span>km/h</span></div>
+      <div id="gear-value">D</div>
+      <div id="vehicle-label">Sedan</div>
     </div>
 
-    <div id="action-container" class="hidden">
-        <button id="btn-action">🖐️ INTERACT</button>
+    <div id="stunt-banner" class="hidden"></div>
+    <div id="wanted-msg" class="hidden">CRASH!</div>
+  </div>
+
+  <!-- ============ PAUSE OVERLAY ============ -->
+  <div id="pause-overlay" class="overlay hidden">
+    <div class="panel">
+      <h2>PAUSED</h2>
+      <button id="btn-resume" class="panel-btn primary">Resume</button>
+      <button id="btn-pause-settings" class="panel-btn">Settings</button>
+      <button id="btn-quit-title" class="panel-btn danger">Quit to Title</button>
+    </div>
+  </div>
+
+  <!-- ============ SETTINGS PANEL ============ -->
+  <div id="settings-panel" class="overlay hidden">
+    <div class="panel wide">
+      <h2>SETTINGS</h2>
+      <button id="btn-close-settings" class="panel-btn primary top-close">Close</button>
+      <div class="settings-row">
+        <span>Sound</span>
+        <button id="btn-sound-settings" class="toggle-btn"><span id="btn-sound-icon-settings">🔊</span></button>
+      </div>
+      <div class="settings-row">
+        <span>Day / Night cycle</span>
+        <button id="btn-daynight-toggle" class="toggle-btn">☀️</button>
+      </div>
+      <div class="settings-row">
+        <span>Seasons</span>
+        <button id="btn-seasons-toggle" class="toggle-btn">❄️</button>
+      </div>
+      <h2 class="sub-h2">PREMIUM VEHICLES</h2>
+      <div id="premium-vehicle-list"></div>
+      <p class="panel-note">Drag anywhere on screen to look around. Sound needs one tap to start (browser rule).</p>
+    </div>
+  </div>
+
+  <!-- ============ CHARACTER CREATOR ============ -->
+  <div id="outfit-panel" class="overlay hidden">
+    <div class="panel wide">
+      <h2>CHARACTER CREATOR</h2>
+      <canvas id="creator-preview" class="creator-preview"></canvas>
+      <input id="player-name-input" class="name-input" type="text" maxlength="16" placeholder="Your name" autocomplete="off" />
+      <div class="outfit-cycle">
+        <button id="btn-outfit-prev" class="arrow-btn">‹</button>
+        <div id="outfit-current-label">Explorer</div>
+        <button id="btn-outfit-next" class="arrow-btn">›</button>
+      </div>
+      <div id="tint-swatches" class="tint-swatches"></div>
+      <button id="btn-close-outfit" class="panel-btn primary">Save &amp; Close</button>
+    </div>
+  </div>
+
+  <!-- ============ TOUCH CONTROLS ============ -->
+  <div id="touch-controls">
+    <div id="cam-zone"></div>
+
+    <!-- On-foot: joystick + jump/sprint/enter/interact -->
+    <div id="walk-controls">
+      <div id="joystick-zone">
+        <div id="joystick-base"></div>
+        <div id="joystick-knob"></div>
+      </div>
+      <div id="walk-buttons">
+        <button id="btn-interact" class="tbtn">✋<span>Interact</span></button>
+        <button id="btn-enter" class="tbtn accent">🚗<span>Enter</span></button>
+        <button id="btn-jump" class="tbtn">⬆️<span>Jump</span></button>
+        <button id="btn-run" class="tbtn">⚡<span>Sprint</span></button>
+      </div>
     </div>
 
-    <!-- BAG BUTTON -->
-    <button id="bagBtn">🎒</button>
-
-    <!-- INVENTORY WINDOW -->
-    <div id="bagWindow">
-
-        <div class="bagTitle">
-            🎒 INVENTORY
-        </div>
-
-        <div id="bagGrid">
-            <div class="slot"></div>
-            <div class="slot"></div>
-            <div class="slot"></div>
-            <div class="slot"></div>
-            <div class="slot"></div>
-
-            <div class="slot"></div>
-            <div class="slot"></div>
-            <div class="slot"></div>
-            <div class="slot"></div>
-            <div class="slot"></div>
-
-            <div class="slot"></div>
-            <div class="slot"></div>
-            <div class="slot"></div>
-            <div class="slot"></div>
-            <div class="slot"></div>
-
-            <div class="slot"></div>
-            <div class="slot"></div>
-            <div class="slot"></div>
-            <div class="slot"></div>
-            <div class="slot"></div>
-        </div>
-
-        <button id="closeBag">
-            Close
-        </button>
-
+    <!-- Driving: steer pad + pedals + action row -->
+    <div id="drive-controls" class="hidden">
+      <div id="steer-pad">
+        <button id="btn-steer-left" class="tbtn wide">⬅️</button>
+        <button id="btn-steer-right" class="tbtn wide">➡️</button>
+      </div>
+      <div id="pedal-pad">
+        <button id="btn-accel" class="tbtn wide accent">⬆️<span>Gas</span></button>
+        <button id="btn-brake" class="tbtn wide">⬇️<span>Brake</span></button>
+      </div>
+      <div id="drive-actions">
+        <button id="btn-handbrake" class="tbtn small">🅿️<span>Drift</span></button>
+        <button id="btn-camera" class="tbtn small">📷<span>View</span></button>
+        <button id="btn-reset-car" class="tbtn small">🔄<span>Reset</span></button>
+        <button id="btn-exit" class="tbtn small">🚪<span>Exit</span></button>
+      </div>
     </div>
+  </div>
 
-    <!-- ============================================================ -->
-    <!-- MISSION SYSTEM: NARRATIVE POPUP (terminal hacks, cinematics)  -->
-    <!-- ============================================================ -->
-    <div id="missionOverlay" class="mission-hidden">
-        <div id="missionPopup">
-            <div id="missionPopupContent"></div>
-            <button id="missionContinueBtn" class="mission-hidden">CONTINUE</button>
-        </div>
-    </div>
+  <div id="mobile-toggle-hint">WASD/Arrows move · Shift sprint · Space jump · E enter/exit · F interact · C camera · R reset car · Esc pause · Drag to look</div>
 
-    <!-- MISSION SYSTEM: SHORT TOAST (access denied/granted, item pickups) -->
-    <div id="missionToast"></div>
-
-    <script src="game.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
